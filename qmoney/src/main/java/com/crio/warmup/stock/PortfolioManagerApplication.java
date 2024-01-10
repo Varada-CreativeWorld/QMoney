@@ -2,27 +2,21 @@
 package com.crio.warmup.stock;
 
 
-import com.crio.warmup.stock.dto.*;
+// import com.crio.warmup.stock.dto.*;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
-import org.springframework.web.client.RestTemplate;
 
 
 public class PortfolioManagerApplication {
@@ -46,7 +40,15 @@ public class PortfolioManagerApplication {
 
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
 
-     return Collections.emptyList();
+    ObjectMapper objectMapper = getObjectMapper();
+    List<String> results = new ArrayList<>();
+    File filename = resolveFileFromResources(args[0]);
+    Trade[] trades = objectMapper.readValue(filename, Trade[].class);
+    System.out.println("Deserialized(read) successfully");
+    for (Trade trade : trades) {
+      results.add(trade.symbol);
+    }
+    return results;
   }
 
 
@@ -82,6 +84,7 @@ public class PortfolioManagerApplication {
   private static ObjectMapper getObjectMapper() {
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule());
+    objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     return objectMapper;
   }
 
