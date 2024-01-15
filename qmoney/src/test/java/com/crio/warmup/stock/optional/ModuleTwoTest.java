@@ -43,8 +43,6 @@ class ModuleTwoTest {
     //then
     String uri = "https://api.tiingo.com/tiingo/daily/AAPL/prices?startDate=2010-01-10&endDate=2010-01-10&token=abcd";
 
-    System.out.println(""+uri.length()+""+tiingoUrl.length());
-
     Assertions.assertEquals(tiingoUrl, uri);
   }
 
