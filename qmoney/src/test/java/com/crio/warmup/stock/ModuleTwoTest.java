@@ -42,7 +42,7 @@ class ModuleTwoTest {
     String filename = "assessments/trades_invalid_dates.json";
     //when
     Assertions.assertThrows(RuntimeException.class, () -> PortfolioManagerApplication
-        .mainReadQuotes(new String[]{filename, "2017-13-12"}));
+        .mainReadQuotes(new String[]{filename, "2017-12-12"}));
 
   }
 
@@ -53,7 +53,7 @@ class ModuleTwoTest {
     String filename = "assessments/trades_invalid_stock.json";
     //when
     Assertions.assertThrows(RuntimeException.class, () -> PortfolioManagerApplication
-        .mainReadQuotes(new String[]{filename, "2017-13-12"}));
+        .mainReadQuotes(new String[]{filename, "2017-12-12"}));
 
   }
 
