@@ -158,7 +158,7 @@ public class PortfolioManagerApplication {
     return sortedMap;
   }
 
-  public static List<String> mainReadQuotes(String[] args) throws IOException, URISyntaxException {
+  public static List<String> mainReadQuotes(String[] args) throws RuntimeException, IOException, URISyntaxException {
     
     List<PortfolioTrade> results = readTradesFromJson(args[0]);
     List<String> finalOutput = new ArrayList<>();
@@ -169,25 +169,28 @@ public class PortfolioManagerApplication {
       String generateURL = prepareUrl(trade, localDate, "6c21aa3c03472563ee2d32f510b246153166db27");
       URL url = new URL(generateURL);
           // Send Get request and fetch data
-      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-      conn.setRequestMethod("GET");
-      BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-      
+      try{
 
-      String output;
-      StringBuilder jsonResponse = new StringBuilder();
-      while ((output = br.readLine()) != null) {
-        jsonResponse.append(output);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+        String output;
+        StringBuilder jsonResponse = new StringBuilder();
+        while ((output = br.readLine()) != null) {
+          jsonResponse.append(output);
+        }
+        // Parse the JSON string
+        ObjectMapper objectMapperTest = new ObjectMapper();
+        // System.out.println(jsonResponse.toString());
+        JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
+        // Extract a specific key-value pai
+        Double close = jsonNode.get(0).get("close").asDouble();
+        unsortedMap.put(close, trade.getSymbol());
+        conn.disconnect();
+
+      } catch(Exception e){
+        throw new RuntimeException("This is a runtime exception!");
       }
-
-      // Parse the JSON string
-      ObjectMapper objectMapperTest = new ObjectMapper();
-      // System.out.println(jsonResponse.toString());
-      JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
-      // Extract a specific key-value pai
-      Double close = jsonNode.get(0).get("close").asDouble();
-      unsortedMap.put(close, trade.getSymbol());
-      conn.disconnect();
       
     }
     Map<Double, String> sortedMap = sortByKey(unsortedMap);
