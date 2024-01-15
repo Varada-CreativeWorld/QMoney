@@ -217,7 +217,7 @@ public class PortfolioManagerApplication {
   // TODO:
   //  Build the Url using given parameters and use this function in your code to cann the API.
   public static String prepareUrl(PortfolioTrade trade, LocalDate endDate, String token) {  
-    String generateURL = String.format("https://api.tiingo.com/tiingo/daily/%s/prices?startDate=%s&endDate=%s&token=%s",trade.getSymbol(), endDate, endDate, token);
+    String generateURL = String.format("https://api.tiingo.com/tiingo/daily/%s/prices?startDate=%s&endDate=%s&token=%s",trade.getSymbol(), trade.getPurchaseDate(), endDate, token);
     return generateURL;
   }
 

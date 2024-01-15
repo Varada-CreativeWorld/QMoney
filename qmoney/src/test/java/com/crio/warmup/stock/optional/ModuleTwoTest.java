@@ -32,7 +32,7 @@ class ModuleTwoTest {
   void prepareUrl() throws Exception {
     //given
     PortfolioTrade trade = new PortfolioTrade();
-    trade.setPurchaseDate(LocalDate.parse("2010-01-10"));
+    trade.setPurchaseDate(LocalDate.parse("2010-01-01"));
     trade.setSymbol("AAPL");
     String token = "abcd";
     //when
@@ -41,7 +41,7 @@ class ModuleTwoTest {
     System.out.println(tiingoUrl);
 
     //then
-    String uri = "https://api.tiingo.com/tiingo/daily/AAPL/prices?startDate=2010-01-10&endDate=2010-01-10&token=abcd";
+    String uri = "https://api.tiingo.com/tiingo/daily/AAPL/prices?startDate=2010-01-01&endDate=2010-01-10&token=abcd";
 
     Assertions.assertEquals(tiingoUrl, uri);
   }
