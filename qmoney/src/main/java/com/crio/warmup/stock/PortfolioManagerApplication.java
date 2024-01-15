@@ -4,14 +4,21 @@ package com.crio.warmup.stock;
 
 import com.crio.warmup.stock.dto.*;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -22,7 +29,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.web.client.RestTemplate;
+import java.util.*;
 
+
+
+// GithubPojo gitPojo = new RestTemplate().getForObject("https://api.github.com/users/crio-do", GithubPojo.class);
 
 public class PortfolioManagerApplication {
 
@@ -60,12 +71,6 @@ public class PortfolioManagerApplication {
   // Note:
   // 1. You may need to copy relevant code from #mainReadQuotes to parse the Json.
   // 2. Remember to get the latest quotes from Tiingo API.
-
-
-
-
-
-
 
 
 
@@ -146,8 +151,50 @@ public class PortfolioManagerApplication {
 
   // Note:
   // Remember to confirm that you are getting same results for annualized returns as in Module 3.
+  private static Map<Double, String> sortByKey(Map<Double, String> unsortedMap) {
+    // Create a TreeMap to automatically sort the entries by keys
+    Map<Double, String> sortedMap = new TreeMap<>(unsortedMap);
+
+    return sortedMap;
+  }
+
   public static List<String> mainReadQuotes(String[] args) throws IOException, URISyntaxException {
-     return Collections.emptyList();
+    
+    List<PortfolioTrade> results = readTradesFromJson(args[0]);
+    List<String> finalOutput = new ArrayList<>();
+    LocalDate localDate = LocalDate.parse(args[1]);
+    Map<Double, String> unsortedMap = new HashMap<>();
+
+    for(PortfolioTrade trade: results){
+      String generateURL = prepareUrl(trade, localDate, "6c21aa3c03472563ee2d32f510b246153166db27");
+      URL url = new URL(generateURL);
+          // Send Get request and fetch data
+      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+      conn.setRequestMethod("GET");
+      BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+      
+
+      String output;
+      StringBuilder jsonResponse = new StringBuilder();
+      while ((output = br.readLine()) != null) {
+        jsonResponse.append(output);
+      }
+
+      // Parse the JSON string
+      ObjectMapper objectMapperTest = new ObjectMapper();
+      // System.out.println(jsonResponse.toString());
+      JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
+      // Extract a specific key-value pai
+      Double close = jsonNode.get(0).get("close").asDouble();
+      unsortedMap.put(close, trade.getSymbol());
+      conn.disconnect();
+      
+    }
+    Map<Double, String> sortedMap = sortByKey(unsortedMap);
+    for (String value : sortedMap.values()) {
+      finalOutput.add(value);
+    }
+    return finalOutput;
   }
 
   // TODO:
@@ -155,22 +202,24 @@ public class PortfolioManagerApplication {
   //  ./gradlew test --tests PortfolioManagerApplicationTest.readTradesFromJson
   //  ./gradlew test --tests PortfolioManagerApplicationTest.mainReadFile
   public static List<PortfolioTrade> readTradesFromJson(String filename) throws IOException, URISyntaxException {
-     return Collections.emptyList();
+    List<PortfolioTrade> results = new ArrayList<>();
+    File file = resolveFileFromResources(filename);
+    ObjectMapper objectMapper = getObjectMapper();
+    PortfolioTrade[] trades = objectMapper.readValue(file, PortfolioTrade[].class);
+    System.out.println("Deserialized(read) successfully");
+    for (PortfolioTrade trade : trades) {
+      results.add(trade);
+    }
+    return results;
   }
 
 
   // TODO:
   //  Build the Url using given parameters and use this function in your code to cann the API.
-  public static String prepareUrl(PortfolioTrade trade, LocalDate endDate, String token) {
-     return Collections.emptyList();
+  public static String prepareUrl(PortfolioTrade trade, LocalDate endDate, String token) {  
+    String generateURL = String.format("https://api.tiingo.com/tiingo/daily/%s/prices?startDate=%s&endDate=%s&token=%s",trade.getSymbol(), endDate, endDate, token);
+    return generateURL;
   }
-
-
-
-
-
-
-
 
 
 
