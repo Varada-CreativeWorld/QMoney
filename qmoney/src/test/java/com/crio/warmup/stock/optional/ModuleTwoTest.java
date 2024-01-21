@@ -38,7 +38,6 @@ class ModuleTwoTest {
     //when
     String tiingoUrl = PortfolioManagerApplication
             .prepareUrl(trade, LocalDate.parse("2010-01-10"), token);
-    System.out.println(tiingoUrl);
 
     //then
     String uri = "https://api.tiingo.com/tiingo/daily/AAPL/prices?startDate=2010-01-01&endDate=2010-01-10&token=abcd";
