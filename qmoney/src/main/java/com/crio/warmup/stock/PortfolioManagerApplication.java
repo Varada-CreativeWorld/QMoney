@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -30,7 +31,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
-
+import java.time.temporal.ChronoUnit;
 
 
 // GithubPojo gitPojo = new RestTemplate().getForObject("https://api.github.com/users/crio-do", GithubPojo.class);
@@ -137,9 +138,9 @@ public class PortfolioManagerApplication {
   public static List<String> debugOutputs() {
 
      String valueOfArgument0 = "trades.json";
-     String resultOfResolveFilePathArgs0 = "";
-     String toStringOfObjectMapper = "";
-     String functionNameFromTestFileInStackTrace = "";
+     String resultOfResolveFilePathArgs0 = "trades.json";
+     String toStringOfObjectMapper = "ObjectMapper";
+     String functionNameFromTestFileInStackTrace = "mainReadFile";
      String lineNumberFromTestFileInStackTrace = "";
 
 
@@ -241,10 +242,54 @@ public class PortfolioManagerApplication {
      return Collections.emptyList();
   }
 
-  public static List<AnnualizedReturn> mainCalculateSingleReturn(String[] args)
-      throws IOException, URISyntaxException {
-     return Collections.emptyList();
+  public static List<AnnualizedReturn> mainCalculateSingleReturn(String[] args) throws IOException, URISyntaxException {
+    List<PortfolioTrade> trades = readTradesFromJson(args[0]);
+    List<AnnualizedReturn> results = new ArrayList<>();
+    LocalDate localDate = LocalDate.parse(args[1]);
+    for (PortfolioTrade trade : trades) {
+      String generateURL = prepareUrl(trade, localDate, "6c21aa3c03472563ee2d32f510b246153166db27");
+      URL url = new URL(generateURL);
+          // Send Get request and fetch data
+      try{
+
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+        String output;
+        StringBuilder jsonResponse = new StringBuilder();
+        while ((output = br.readLine()) != null) {
+          jsonResponse.append(output);
+        }
+        // Parse the JSON string
+        ObjectMapper objectMapperTest = new ObjectMapper();
+        // System.out.println(jsonResponse.toString());
+        JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
+        // Extract a specific key-value pai
+        Double close = jsonNode.get(jsonNode.size()-1).get("close").asDouble();
+        Double open = jsonNode.get(0).get("open").asDouble();
+        Double totalReturn = (double)(close - open) / open;
+        Double yearDifference = calculateYearDifference(trade.getPurchaseDate(),localDate);
+        Double annualizedReturns = Math.pow((1+totalReturn), ((double)1/yearDifference)) - 1;
+        AnnualizedReturn tempObj = new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
+        results.add(tempObj);
+        conn.disconnect();
+
+      } catch(Exception e){
+        throw new RuntimeException("This is a runtime exception!");
+      }
+    }
+    return results;
   }
+
+  public static double calculateYearDifference(LocalDate date1, LocalDate date2) {
+        // Calculate the difference in days using ChronoUnit.DAYS.between
+        long daysDifference = ChronoUnit.DAYS.between(date1, date2);
+
+        // Convert days to years (considering an average of 365.25 days per year)
+        double yearsDifference = daysDifference / 365.25;
+
+        return Math.abs(yearsDifference); // Take the absolute value to get a positive result
+}
 
   // TODO: CRIO_TASK_MODULE_CALCULATIONS
   //  Return the populated list of AnnualizedReturn for all stocks.
@@ -258,21 +303,12 @@ public class PortfolioManagerApplication {
   //  Test the same using below specified command. The build should be successful.
   //     ./gradlew test --tests PortfolioManagerApplicationTest.testCalculateAnnualizedReturn
 
-  public static AnnualizedReturn calculateAnnualizedReturns(LocalDate endDate,
-      PortfolioTrade trade, Double buyPrice, Double sellPrice) {
-      return new AnnualizedReturn("", 0.0, 0.0);
+  public static AnnualizedReturn calculateAnnualizedReturns(LocalDate endDate, PortfolioTrade trade, Double buyPrice, Double sellPrice){
+    Double totalReturn = (double)(sellPrice - buyPrice) / buyPrice;
+    Double yearDifference = calculateYearDifference(trade.getPurchaseDate(),endDate);
+    Double annualizedReturns = Math.pow((1+totalReturn), ((double)1/yearDifference)) - 1;
+    return new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
   }
-
-
-
-
-
-
-
-
-
-
-
 
 
   public static void main(String[] args) throws Exception {
