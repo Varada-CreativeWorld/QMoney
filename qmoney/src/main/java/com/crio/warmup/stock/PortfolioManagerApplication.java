@@ -21,10 +21,6 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -167,7 +163,7 @@ public class PortfolioManagerApplication {
     Map<Double, String> unsortedMap = new HashMap<>();
 
     for(PortfolioTrade trade: results){
-      String generateURL = prepareUrl(trade, localDate, "6c21aa3c03472563ee2d32f510b246153166db27");
+      String generateURL = prepareUrl(trade, localDate, getToken());
       URL url = new URL(generateURL);
           // Send Get request and fetch data
       try{
@@ -229,25 +225,53 @@ public class PortfolioManagerApplication {
   //  Ensure all tests are passing using below command
   //  ./gradlew test --tests ModuleThreeRefactorTest
   static Double getOpeningPriceOnStartDate(List<Candle> candles) {
-     return 0.0;
+    for(Candle candle: candles){
+      return (Double) candle.getOpen();
+    }
+    return null;
   }
 
 
   public static Double getClosingPriceOnEndDate(List<Candle> candles) {
-     return 0.0;
+    Collections.reverse(candles);
+    for(Candle candle: candles){
+      return (Double) candle.getClose();
+    }
+    return null;
   }
 
 
   public static List<Candle> fetchCandles(PortfolioTrade trade, LocalDate endDate, String token) {
-     return Collections.emptyList();
+    String generateURL = prepareUrl(trade, endDate, token);
+    List<Candle> results = new ArrayList<>();
+    ObjectMapper objectMapper = getObjectMapper();
+    try {
+      URL url = new URL(generateURL);
+      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+      conn.setRequestMethod("GET");
+      BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+      String output;
+      StringBuilder jsonResponse = new StringBuilder();
+      while ((output = br.readLine()) != null) {
+        jsonResponse.append(output);
+      }
+      return Arrays.asList(objectMapper.readValue(jsonResponse.toString(), TiingoCandle[].class));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return results;
   }
+
+  public static String getToken() {
+    return "6c21aa3c03472563ee2d32f510b246153166db27";
+ }
 
   public static List<AnnualizedReturn> mainCalculateSingleReturn(String[] args) throws IOException, URISyntaxException {
     List<PortfolioTrade> trades = readTradesFromJson(args[0]);
     List<AnnualizedReturn> results = new ArrayList<>();
     LocalDate localDate = LocalDate.parse(args[1]);
     for (PortfolioTrade trade : trades) {
-      String generateURL = prepareUrl(trade, localDate, "6c21aa3c03472563ee2d32f510b246153166db27");
+      String generateURL = prepareUrl(trade, localDate, getToken());
       URL url = new URL(generateURL);
           // Send Get request and fetch data
       try{
@@ -278,7 +302,13 @@ public class PortfolioManagerApplication {
         throw new RuntimeException("This is a runtime exception!");
       }
     }
+    sortByAnnualReturn(results);
     return results;
+  }
+
+  private static void sortByAnnualReturn(List<AnnualizedReturn> annualList) {
+    // Using Comparator.comparingInt for comparing by age
+    Collections.sort(annualList, Comparator.comparingDouble(AnnualizedReturn::getAnnualizedReturn).reversed());
   }
 
   public static double calculateYearDifference(LocalDate date1, LocalDate date2) {
@@ -314,9 +344,6 @@ public class PortfolioManagerApplication {
   public static void main(String[] args) throws Exception {
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
     ThreadContext.put("runId", UUID.randomUUID().toString());
-
-
-
     printJsonObject(mainCalculateSingleReturn(args));
 
   }
