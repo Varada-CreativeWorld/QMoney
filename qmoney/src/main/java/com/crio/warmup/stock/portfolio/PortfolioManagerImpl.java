@@ -3,18 +3,23 @@ package com.crio.warmup.stock.portfolio;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
 import com.crio.warmup.stock.dto.TiingoCandle;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +34,8 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
 
 
-
+  private String APIKEY = "6c21aa3c03472563ee2d32f510b246153166db27";
+  private RestTemplate restTemplate;
   // Caution: Do not delete or modify the constructor, or else your build will break!
   // This is absolutely necessary for backward compatibility
   protected PortfolioManagerImpl(RestTemplate restTemplate) {
@@ -50,7 +56,58 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   //CHECKSTYLE:OFF
 
+  public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades, LocalDate endDate){
+    List<AnnualizedReturn> results = new ArrayList<>();
+    for (PortfolioTrade trade : portfolioTrades) {
 
+      try{
+        
+        String generateURL = buildUri(trade.getSymbol(), trade.getPurchaseDate(), endDate);
+        System.out.println(generateURL);
+        URL url = new URL(generateURL);
+            // Send Get request and fetch data
+
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+        String output;
+        StringBuilder jsonResponse = new StringBuilder();
+        while ((output = br.readLine()) != null) {
+          jsonResponse.append(output);
+        }
+        // Parse the JSON string
+        ObjectMapper objectMapperTest = new ObjectMapper();
+        // System.out.println(jsonResponse.toString());
+        JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
+        // Extract a specific key-value pai
+        Double close = jsonNode.get(jsonNode.size()-1).get("close").asDouble();
+        Double open = jsonNode.get(0).get("open").asDouble();
+        Double totalReturn = (double)(close - open) / open;
+        Double yearDifference = calculateYearDifference(trade.getPurchaseDate(),endDate);
+        Double annualizedReturns = Math.pow((1+totalReturn), ((double)1/yearDifference)) - 1;
+        AnnualizedReturn tempObj = new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
+        results.add(tempObj);
+        conn.disconnect();
+
+      } catch(Exception e){
+        // throw new RuntimeException("This is a runtime exception!");
+        System.out.println(e);
+      }
+    }
+    // sortByAnnualReturn(results);
+    Collections.sort(results, getComparator());
+    return results;
+  }
+
+  private double calculateYearDifference(LocalDate date1, LocalDate date2) {
+    // Calculate the difference in days using ChronoUnit.DAYS.between
+    long daysDifference = ChronoUnit.DAYS.between(date1, date2);
+
+    // Convert days to years (considering an average of 365.25 days per year)
+    double yearsDifference = daysDifference / 365.25;
+
+    return Math.abs(yearsDifference); // Take the absolute value to get a positive result
+}
 
 
   private Comparator<AnnualizedReturn> getComparator() {
@@ -70,7 +127,8 @@ public class PortfolioManagerImpl implements PortfolioManager {
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
-       String uriTemplate = "https:api.tiingo.com/tiingo/daily/$SYMBOL/prices?"
-            + "startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
+       String uriTemplate = String.format("https://api.tiingo.com/tiingo/daily/%s/prices?"
+            + "startDate=%s&endDate=%s&token=%s", symbol, startDate, endDate, APIKEY);
+       return uriTemplate;
   }
 }

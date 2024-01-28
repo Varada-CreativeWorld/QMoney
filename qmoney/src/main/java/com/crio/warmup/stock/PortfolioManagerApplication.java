@@ -38,7 +38,8 @@ import java.util.*;
 // GithubPojo gitPojo = new RestTemplate().getForObject("https://api.github.com/users/crio-do", GithubPojo.class);
 
 public class PortfolioManagerApplication {
-
+  
+  private static RestTemplate restTemplate;
   // TODO: CRIO_TASK_MODULE_JSON_PARSING
   //  Task:
   //       - Read the json file provided in the argument[0], The file is available in the classpath.
@@ -359,11 +360,13 @@ public class PortfolioManagerApplication {
 
   public static List<AnnualizedReturn> mainCalculateReturnsAfterRefactor(String[] args)
       throws Exception {
-       String file = args[0];
+      //  String file = args[0];
        LocalDate endDate = LocalDate.parse(args[1]);
-       String contents = readFileAsString(file);
-       ObjectMapper objectMapper = getObjectMapper();
-       return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
+      //  String contents = readFileAsString(file);
+      //  ObjectMapper objectMapper = getObjectMapper();
+       PortfolioManager portfolioManager = PortfolioManagerFactory.getPortfolioManager(restTemplate);
+       List<PortfolioTrade> portfolioTrades = readTradesFromJson(args[0]);
+       return portfolioManager.calculateAnnualizedReturn(portfolioTrades, endDate);
   }
 
 
