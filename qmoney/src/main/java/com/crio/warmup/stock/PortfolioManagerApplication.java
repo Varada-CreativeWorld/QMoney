@@ -21,13 +21,18 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import com.crio.warmup.stock.portfolio.PortfolioManager;
+import com.crio.warmup.stock.portfolio.PortfolioManagerFactory;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
-import java.time.temporal.ChronoUnit;
 
 
 // GithubPojo gitPojo = new RestTemplate().getForObject("https://api.github.com/users/crio-do", GithubPojo.class);
@@ -319,7 +324,7 @@ public class PortfolioManagerApplication {
         double yearsDifference = daysDifference / 365.25;
 
         return Math.abs(yearsDifference); // Take the absolute value to get a positive result
-}
+  }
 
   // TODO: CRIO_TASK_MODULE_CALCULATIONS
   //  Return the populated list of AnnualizedReturn for all stocks.
@@ -338,14 +343,36 @@ public class PortfolioManagerApplication {
     Double yearDifference = calculateYearDifference(trade.getPurchaseDate(),endDate);
     Double annualizedReturns = Math.pow((1+totalReturn), ((double)1/yearDifference)) - 1;
     return new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
+
+  }
+
+
+
+  // TODO: CRIO_TASK_MODULE_REFACTOR
+  //  Once you are done with the implementation inside PortfolioManagerImpl and
+  //  PortfolioManagerFactory, create PortfolioManager using PortfolioManagerFactory.
+  //  Refer to the code from previous modules to get the List<PortfolioTrades> and endDate, and
+  //  call the newly implemented method in PortfolioManager to calculate the annualized returns.
+
+  // Note:
+  // Remember to confirm that you are getting same results for annualized returns as in Module 3.
+
+  public static List<AnnualizedReturn> mainCalculateReturnsAfterRefactor(String[] args)
+      throws Exception {
+       String file = args[0];
+       LocalDate endDate = LocalDate.parse(args[1]);
+       String contents = readFileAsString(file);
+       ObjectMapper objectMapper = getObjectMapper();
+       return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
   }
 
 
   public static void main(String[] args) throws Exception {
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
     ThreadContext.put("runId", UUID.randomUUID().toString());
-    printJsonObject(mainCalculateSingleReturn(args));
-
+    printJsonObject(mainCalculateReturnsAfterRefactor(args));
   }
+
+
 }
 
