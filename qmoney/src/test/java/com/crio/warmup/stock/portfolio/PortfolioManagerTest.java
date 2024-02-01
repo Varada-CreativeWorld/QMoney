@@ -81,16 +81,14 @@ class PortfolioManagerTest {
       throws Exception {
     //given
     String moduleToRun = null;
-    moduleToRun = "REFACTOR";
+    moduleToRun = "REFACTOR1";
 
 
     if (moduleToRun.equals("REFACTOR")) {
-      Mockito.lenient().doReturn(getCandles(aaplQuotes))
-          .when(portfolioManager).getStockQuote(eq("AAPL"), any(), any());
-      Mockito.lenient().doReturn(getCandles(msftQuotes))
-          .when(portfolioManager).getStockQuote(eq("MSFT"), any(), any());
-      Mockito.lenient().doReturn(getCandles(googlQuotes))
-          .when(portfolioManager).getStockQuote(eq("GOOGL"), any(), any());
+      System.out.println(getCandles(aaplQuotes));
+      Mockito.doReturn(getCandles(aaplQuotes)).when(portfolioManager).getStockQuote(eq("AAPL"), any(), any());
+      Mockito.doReturn(getCandles(msftQuotes)).when(portfolioManager).getStockQuote(eq("MSFT"), any(), any());
+      Mockito.doReturn(getCandles(googlQuotes)).when(portfolioManager).getStockQuote(eq("GOOGL"), any(), any());
     }
     PortfolioTrade trade1 = new PortfolioTrade("AAPL", 50, LocalDate.parse("2019-01-02"));
     PortfolioTrade trade2 = new PortfolioTrade("GOOGL", 100, LocalDate.parse("2019-01-02"));
