@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
@@ -39,6 +40,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   private String APIKEY = "6c21aa3c03472563ee2d32f510b246153166db27";
   private RestTemplate restTemplate;
+
   // Caution: Do not delete or modify the constructor, or else your build will break!
   // This is absolutely necessary for backward compatibility
   protected PortfolioManagerImpl(RestTemplate restTemplate) {
@@ -97,6 +99,10 @@ public class PortfolioManagerImpl implements PortfolioManager {
 }
 
 
+
+
+
+
   private Comparator<AnnualizedReturn> getComparator() {
     return Comparator.comparing(AnnualizedReturn::getAnnualizedReturn).reversed();
   }
@@ -127,4 +133,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
             + "startDate=%s&endDate=%s&token=%s", symbol, startDate, endDate, APIKEY);
        return uriTemplate;
   }
+
+
+
 }

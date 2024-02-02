@@ -85,12 +85,13 @@ class PortfolioManagerTest {
 
 
     if (moduleToRun.equals("REFACTOR")) {
-      System.out.println(getCandles(aaplQuotes));
-      Mockito.doReturn(getCandles(aaplQuotes)).when(portfolioManager).getStockQuote(eq("AAPL"), any(), any());
-      Mockito.doReturn(getCandles(msftQuotes)).when(portfolioManager).getStockQuote(eq("MSFT"), any(), any());
-      Mockito.doReturn(getCandles(googlQuotes)).when(portfolioManager).getStockQuote(eq("GOOGL"), any(), any());
+      Mockito.doReturn(getCandles(aaplQuotes))
+          .when(portfolioManager).getStockQuote(eq("AAPL"), any(), any());
+      Mockito.doReturn(getCandles(msftQuotes))
+          .when(portfolioManager).getStockQuote(eq("MSFT"), any(), any());
+      Mockito.doReturn(getCandles(googlQuotes))
+          .when(portfolioManager).getStockQuote(eq("GOOGL"), any(), any());
     }
-    
     PortfolioTrade trade1 = new PortfolioTrade("AAPL", 50, LocalDate.parse("2019-01-02"));
     PortfolioTrade trade2 = new PortfolioTrade("GOOGL", 100, LocalDate.parse("2019-01-02"));
     PortfolioTrade trade3 = new PortfolioTrade("MSFT", 20, LocalDate.parse("2019-01-02"));
@@ -109,8 +110,6 @@ class PortfolioManagerTest {
     Assertions.assertEquals(0.584, annualizedReturns.get(1).getAnnualizedReturn(), 0.01);
     Assertions.assertEquals(0.33, annualizedReturns.get(2).getAnnualizedReturn(),0.01);
     Assertions.assertEquals(Arrays.asList(new String[]{"AAPL", "MSFT", "GOOGL"}), symbols);
-
-    
 
   }
 

@@ -57,8 +57,6 @@ class PortfolioManagerApplicationTest {
     List<AnnualizedReturn> result = PortfolioManagerApplication
         .mainCalculateSingleReturn(new String[]{filename, "2019-12-12"});
 
-    System.out.println(result);
-
     //then
     List<String> symbols = result.stream().map(AnnualizedReturn::getSymbol)
         .collect(Collectors.toList());
