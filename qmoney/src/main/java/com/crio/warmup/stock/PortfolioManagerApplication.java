@@ -261,6 +261,8 @@ public class PortfolioManagerApplication {
       while ((output = br.readLine()) != null) {
         jsonResponse.append(output);
       }
+      System.out.println(jsonResponse);
+      System.out.println(objectMapper.readValue(jsonResponse.toString(), TiingoCandle[].class));
       return Arrays.asList(objectMapper.readValue(jsonResponse.toString(), TiingoCandle[].class));
     } catch (Exception e) {
       e.printStackTrace();
@@ -274,6 +276,7 @@ public class PortfolioManagerApplication {
 
   public static List<AnnualizedReturn> mainCalculateSingleReturn(String[] args) throws IOException, URISyntaxException {
     List<PortfolioTrade> trades = readTradesFromJson(args[0]);
+    System.out.println(trades);
     List<AnnualizedReturn> results = new ArrayList<>();
     LocalDate localDate = LocalDate.parse(args[1]);
     for (PortfolioTrade trade : trades) {
@@ -285,15 +288,20 @@ public class PortfolioManagerApplication {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+        
+// BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(file.openStream()));
+
         String output;
         StringBuilder jsonResponse = new StringBuilder();
         while ((output = br.readLine()) != null) {
           jsonResponse.append(output);
         }
+        System.out.println(jsonResponse.toString());
         // Parse the JSON string
         ObjectMapper objectMapperTest = new ObjectMapper();
         // System.out.println(jsonResponse.toString());
         JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
+        System.out.println(jsonNode);
         // Extract a specific key-value pai
         Double close = jsonNode.get(jsonNode.size()-1).get("close").asDouble();
         Double open = jsonNode.get(0).get("open").asDouble();
@@ -302,9 +310,11 @@ public class PortfolioManagerApplication {
         Double annualizedReturns = Math.pow((1+totalReturn), ((double)1/yearDifference)) - 1;
         AnnualizedReturn tempObj = new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
         results.add(tempObj);
+        br.close();
         conn.disconnect();
 
       } catch(Exception e){
+        System.out.println(e);
         throw new RuntimeException("This is a runtime exception!");
       }
     }
