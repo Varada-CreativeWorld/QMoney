@@ -28,6 +28,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerImpl implements PortfolioManager {
@@ -61,33 +64,17 @@ public class PortfolioManagerImpl implements PortfolioManager {
     for (PortfolioTrade trade : portfolioTrades) {
 
       try{
-        
-        String generateURL = buildUri(trade.getSymbol(), trade.getPurchaseDate(), endDate);
-        System.out.println(generateURL);
-        URL url = new URL(generateURL);
-            // Send Get request and fetch data
 
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-        String output;
-        StringBuilder jsonResponse = new StringBuilder();
-        while ((output = br.readLine()) != null) {
-          jsonResponse.append(output);
-        }
-        // Parse the JSON string
-        ObjectMapper objectMapperTest = new ObjectMapper();
-        // System.out.println(jsonResponse.toString());
-        JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
+        List<Candle> listOfCandles = getStockQuote(trade.getSymbol(), trade.getPurchaseDate(), endDate);
+        
         // Extract a specific key-value pai
-        Double close = jsonNode.get(jsonNode.size()-1).get("close").asDouble();
-        Double open = jsonNode.get(0).get("open").asDouble();
+        Double close = listOfCandles.get(listOfCandles.size()-1).getClose();
+        Double open = listOfCandles.get(0).getOpen();
         Double totalReturn = (double)(close - open) / open;
         Double yearDifference = calculateYearDifference(trade.getPurchaseDate(),endDate);
         Double annualizedReturns = Math.pow((1+totalReturn), ((double)1/yearDifference)) - 1;
         AnnualizedReturn tempObj = new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturn);
         results.add(tempObj);
-        conn.disconnect();
 
       } catch(Exception e){
         // throw new RuntimeException("This is a runtime exception!");
@@ -123,7 +110,16 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
       throws JsonProcessingException {
-     return null;
+
+        String generateURL = buildUri(symbol, from, to);
+        // Make a GET request and retrieve the response as a ResponseEntity
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity(generateURL, String.class);
+
+        // Extract the response body from the ResponseEntity
+        String responseBody = responseEntity.getBody();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return Arrays.asList(mapper.readValue(responseBody, TiingoCandle[].class));
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {

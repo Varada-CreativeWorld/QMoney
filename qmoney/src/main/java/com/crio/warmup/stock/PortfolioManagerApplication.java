@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
 
@@ -39,7 +40,7 @@ import java.util.*;
 
 public class PortfolioManagerApplication {
   
-  private static RestTemplate restTemplate;
+  private static RestTemplate restTemplate = new RestTemplate();
   // TODO: CRIO_TASK_MODULE_JSON_PARSING
   //  Task:
   //       - Read the json file provided in the argument[0], The file is available in the classpath.
@@ -167,48 +168,24 @@ public class PortfolioManagerApplication {
     List<String> finalOutput = new ArrayList<>();
     LocalDate localDate = LocalDate.parse(args[1]);
     Map<Double, String> unsortedMap = new HashMap<>();
-    HttpURLConnection connection = null;
-    BufferedReader reader = null;
 
     try{
       for(PortfolioTrade trade: results){
         String generateURL = prepareUrl(trade, localDate, getToken());
-        URL url = new URL(generateURL);
-        connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        reader = new BufferedReader(new InputStreamReader((connection.getInputStream())));
-        String output;
-        StringBuilder jsonResponse = new StringBuilder();
-        while ((output = reader.readLine()) != null) {
-          jsonResponse.append(output);
-        }
-
-        ObjectMapper objectMapperTest = new ObjectMapper();
-        System.out.println(jsonResponse.toString());
-        JsonNode jsonNode = objectMapperTest.readTree(jsonResponse.toString());
-        Double close = jsonNode.get(0).get("close").asDouble();
+        // Make a GET request and retrieve the response as a ResponseEntity
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity(generateURL, String.class);
+        // Extract the response body from the ResponseEntity
+        String responseBody = responseEntity.getBody();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        List<TiingoCandle> apiResponse = Arrays.asList(mapper.readValue(responseBody, TiingoCandle[].class));
+        Double close = apiResponse.get(0).getClose();
         unsortedMap.put(close, trade.getSymbol());
     }
     }catch (Exception e) {
       System.out.println(e);
       throw new RuntimeException("This is a runtime exception!");
     } 
-    finally {
-            System.out.println("asdfghjkl;");
-            // Close the connection and associated streams
-            if (connection != null) {
-                connection.disconnect();
-            }
-
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
     Map<Double, String> sortedMap = sortByKey(unsortedMap);
     for (String value : sortedMap.values()) {
       finalOutput.add(value);
@@ -262,7 +239,7 @@ public class PortfolioManagerApplication {
 
   public static List<Candle> fetchCandles(PortfolioTrade trade, LocalDate endDate, String token) {
     // String generateURL = prepareUrl(trade, endDate, token);
-    List<Candle> results = new ArrayList<>();
+    // List<Candle> results = new ArrayList<>();
     // ObjectMapper objectMapper = getObjectMapper();
     // try {
     //   URL url = new URL(generateURL);
@@ -282,40 +259,21 @@ public class PortfolioManagerApplication {
     // }
     // return results;
 
-    HttpURLConnection connection = null;
-    BufferedReader reader = null;
-
     try{
       String generateURL = prepareUrl(trade, endDate, token);
-      URL url = new URL(generateURL);
-      connection = (HttpURLConnection) url.openConnection();
-      reader = new BufferedReader(new InputStreamReader((connection.getInputStream())));
-      String output;
-      StringBuilder jsonResponse = new StringBuilder();
-      while ((output = reader.readLine()) != null) {
-        jsonResponse.append(output);
-      }
+        // Make a GET request and retrieve the response as a ResponseEntity
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity(generateURL, String.class);
+        // Extract the response body from the ResponseEntity
+        String responseBody = responseEntity.getBody();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return Arrays.asList(mapper.readValue(responseBody, TiingoCandle[].class));
 
 
     }catch (Exception e) {
       System.out.println(e);
       throw new RuntimeException("This is a runtime exception!");
     } 
-    finally {
-            // Close the connection and associated streams
-            if (connection != null) {
-                connection.disconnect();
-            }
-
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    return results;
   }
 
   public static String getToken() {
