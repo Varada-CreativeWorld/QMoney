@@ -11,8 +11,10 @@ public class PortfolioManagerFactory {
   //  Implement the method to return new instance of PortfolioManager.
   //  Remember, pass along the RestTemplate argument that is provided to the new instance.
 
-  public static PortfolioManager getPortfolioManager(RestTemplate restTemplate) {
+  private static StockQuoteServiceFactory stockQuoteServiceFactory;
 
+  @Deprecated
+  public static PortfolioManager getPortfolioManager(RestTemplate restTemplate) {
     return new PortfolioManagerImpl(restTemplate);
   }
 
@@ -28,7 +30,8 @@ public class PortfolioManagerFactory {
 
    public static PortfolioManager getPortfolioManager(String provider,
      RestTemplate restTemplate) {
-     return null;
+      StockQuotesService stockQuotesService = StockQuoteServiceFactory.INSTANCE.getService("tiingo", restTemplate);
+      return new PortfolioManagerImpl(stockQuotesService);
    }
 
 }

@@ -3,20 +3,34 @@ package com.crio.warmup.stock.quotes;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
-
+import com.crio.warmup.stock.dto.AlphavantageCandle;
 import com.crio.warmup.stock.dto.AlphavantageDailyResponse;
 import com.crio.warmup.stock.dto.Candle;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import javax.management.ValueExp;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 public class AlphavantageService implements StockQuotesService {
 
+  private String APIKEY = "Y1QHCR9FYHPVPGSA";
+  private RestTemplate restTemplate;
+
+  protected AlphavantageService(RestTemplate restTemplate){
+    this.restTemplate = restTemplate;
+  }
+  public AlphavantageService()
+{}
   // TODO: CRIO_TASK_MODULE_ADDITIONAL_REFACTOR
   //  Implement the StockQuoteService interface as per the contracts. Call Alphavantage service
   //  to fetch daily adjusted data for last 20 years.
@@ -44,6 +58,42 @@ public class AlphavantageService implements StockQuotesService {
   //  1. Write a method to create appropriate url to call Alphavantage service. The method should
   //     be using configurations provided in the {@link @application.properties}.
   //  2. Use this method in #getStockQuote.
+
+
+  public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to) throws JsonProcessingException {
+    String generateURL = buildUri(symbol);
+    List<Candle> results = new ArrayList<>();
+    // Make a GET request and retrieve the response as a ResponseEntity
+
+    String responseEntity = restTemplate.getForObject(generateURL, String.class);
+
+    // Extract the response body from the ResponseEntity
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.registerModule(new JavaTimeModule());
+    
+    AlphavantageDailyResponse rawResults = mapper.readValue(responseEntity, AlphavantageDailyResponse.class);
+    Map<LocalDate, AlphavantageCandle> mp = rawResults.getCandles();
+    for (Map.Entry<LocalDate, AlphavantageCandle> entry : mp.entrySet()) {
+      LocalDate key = entry.getKey();
+      AlphavantageCandle value = entry.getValue();
+      boolean isWithinRange = isWithinRange(key, from, to);
+      if(isWithinRange){
+        value.setDate(key);
+        results.add(value);
+      }
+    }
+    Collections.reverse(results);
+    return results;
+  }
+
+  private String buildUri(String symbol) {
+    String uriTemplate = String.format("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s", symbol, APIKEY);
+    return uriTemplate;
+  }
+
+  private static boolean isWithinRange(LocalDate dateToCheck, LocalDate startDate, LocalDate endDate) {
+    return !dateToCheck.isBefore(startDate) && !dateToCheck.isAfter(endDate);
+  }
 
 }
 

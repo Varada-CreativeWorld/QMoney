@@ -32,6 +32,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   private String APIKEY = "6c21aa3c03472563ee2d32f510b246153166db27";
   private RestTemplate restTemplate;
+  private StockQuotesService stockQuotesService;
 
   // Caution: Do not delete or modify the constructor, or else your build will break!
   // This is absolutely necessary for backward compatibility
@@ -52,6 +53,11 @@ public class PortfolioManagerImpl implements PortfolioManager {
   // ./gradlew test --tests PortfolioManagerTest
 
   //CHECKSTYLE:OFF
+
+  public PortfolioManagerImpl(StockQuotesService stockQuotesService) {
+    this.stockQuotesService = stockQuotesService;
+  }
+
 
   public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades, LocalDate endDate){
     List<AnnualizedReturn> results = new ArrayList<>();
@@ -109,15 +115,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
       throws JsonProcessingException {
 
-        String generateURL = buildUri(symbol, from, to);
-        // Make a GET request and retrieve the response as a ResponseEntity
-        ResponseEntity<String> responseEntity = restTemplate.getForEntity(generateURL, String.class);
-
-        // Extract the response body from the ResponseEntity
-        String responseBody = responseEntity.getBody();
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return Arrays.asList(mapper.readValue(responseBody, TiingoCandle[].class));
+        return stockQuotesService.getStockQuote(symbol, from, to);
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {

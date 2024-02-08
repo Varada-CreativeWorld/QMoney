@@ -54,12 +54,9 @@ class TiingoServiceTest {
   @Test
   @MockitoSettings(strictness = Strictness.LENIENT)
   void getStockQuoteSingle() throws Exception {
-    Mockito.doReturn(sampleTiingoResponse)
-        .when(restTemplate).getForObject(anyString(), eq(String.class));
+    Mockito.doReturn(sampleTiingoResponse).when(restTemplate).getForObject(anyString(), eq(String.class));
 
-    List<Candle> candles = tiingoService
-        .getStockQuote("GOOGL",
-            LocalDate.parse("2019-01-01"), LocalDate.parse("2019-01-04"));
+    List<Candle> candles = tiingoService.getStockQuote("GOOGL",LocalDate.parse("2019-01-01"), LocalDate.parse("2019-01-04"));
 
     assertEquals(candles.get(0).getOpen(), 1027.2, 0.3);
 

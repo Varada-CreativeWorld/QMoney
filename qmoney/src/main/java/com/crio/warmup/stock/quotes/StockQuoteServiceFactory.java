@@ -24,6 +24,11 @@ public enum StockQuoteServiceFactory {
 
   public StockQuotesService getService(String provider,  RestTemplate restTemplate) {
 
-     return null;
+     if(provider.equalsIgnoreCase("tiingo")){
+      System.out.println("expected");
+      return new TiingoService(restTemplate);
+     }else{
+      return new AlphavantageService(restTemplate);
+     }
   }
 }
